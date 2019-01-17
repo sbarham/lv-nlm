@@ -1,0 +1,111 @@
+10 - 14 Jan, 2019
+------------
+
+The majority of the time was spent migrating the code to Jupyter Notebooks for easy interactive
+testing and debugging; as always, this entails a host of tiny bugs that need to be addressed
+one by one.
+
+The following occurred afterward, once testing began; these notes document first the issue,
+then the solution:
+
+- key error
+--> o in order to diagnose, migrated all code to Jupyter Notebooks for interactive debugging
+      (this involved reformatting/refactoring)
+--> x turned out to be due to type error, due to improper JSON serialization
+--> x type errors turned out to be pervasive, due to incosistent fixes by previous programmers
+--> o fixed by switching to Pickle, ensuring all index variables always of type int
+
+- data collection/type error (list has no attribute 'tolist')
+--> x some data was stored as tensors, then later converted to a list using Tensor#tolist(), other data stored as list
+      (this led to some errors)
+--> x one tracker (dictionary) was used for all three splits (train/valid/test)
+      this led to data being overwritten in each per-split loop
+--> o fixed these issues by
+      (1) only storing data in lists (not Tensors), and
+      (2) creating a dictionary of trackers, one for each split and modifying the code to index into them during training
+      
+- serializing sample sentences/z values after each epoch
+--> x z values are a list of Tensors (each latent code a Tensor), but code tries to apply Tensor#tolist() to the list
+--> x fixed this, but then turns out that Tensors are not serializable using JSON
+--> o switched to Pickle (everything should be Pickle, not JSON)
+--> # I believe the entire code base has been switched to Pickle now
+
+- graphing results
+--> x no code was provided for this purpose
+--> o code had to be written, adapted, or copied from my other projects and integrated into the testbed
+
+- debugging sample generation/interpolation code
+
+- code for organizing, running, and saving experiments
+--> code for writing model/dataset arguments to file
+--> grid search through various settings
+--> saving results and organizing file structure so results corresponding to various models are easily found
+
+- interpolation between corpus sentences (rather than random samples)
+--> had to be written from scratch
+--> tricky dimension error took an hour to track down
+    - randomly selected two indices, extracted sentences from corpus at those indices
+    - forward pass of model generated a z value per sentence
+    - * each z value needed to be squeezed, since model typically deals with batches, not individual sentences
+    - extra dimension was causing np.linspace() to break
+
+- TODO
+/--> graph to file
+/ --> samples/interpol to file
+/ --> roll into one function for running experiments
+/ --> interpolate between sents from corpus as well as rand sents
+/ --> run/save results for two models
+0 --> introduce other data set
+
+/ --> review Bowman, compare
+0 --> write summary of what we had done
+0 --> write summary of what I just did
+
+0 --> review He paper, note points where need Soheil's help
+
+(
+--> write code to run a test, and save *not just the model* but also the trackers,
+    and the relevant graph, and a text file with the relevant samples and interpolations
+--> write code to create an interpolation not between random code points, but between sentences from the corpus
+)
+
+-------------------------------------------------------------------------------------------------------------------
+
+- NOTE
+--> the interpolations from the model trained on larger sentences -- losing the fine granularity of the code space
+--> this seems to signal posterior collapse
+--> the model trained on smaller sentences doesn't exhibit this behavior as often
+--> presumably an even more complex dataset would cause more catastrophic collapse (as I observed last semester)
+
+BIG NOTE:
+--> just discovered that the code doesn't filter out sentences > max-len; it justs truncates them
+--> this probably significantly degraded language model performance
+
+--> we get decent samples, with a great deal of variety
+--> we get smooth topic transitions in interpolations
+--> the quality of the sentences isn't quite as high as in the Bowman paper
+--> my guess is:
+    - they had more data, and it was very simple data
+    - they probably used the actual PTB (not the smaller, simplified one from Mikolov), as they stated
+    - PTB > 4 million words); Mikolov's PTB ~ 1 million words
+    - but they probably restricted the dataset to very short sentences (all their sampled sentences are between
+      one and seven words in length -- *much* shorter than the typical PTB sentence
+    - when we restrict Mikolov's PTB to very short sentences, the dataset becomes very small, and the language
+      model quality declines
+      
+Stats:
+    - max-len=50: 1.1 million words, 41,000 sents
+    - max-len=25: 
+      
+- THINGS TO DO
+--> we're also not yet using word dropout; however, this seems not to have been
+    generally adopted by future researchers
+    - could implement this very easily
+--> we should probably get the full PTB? or try
+    - have heard conflicting things on price -- ldc website lists non-member fee for downloading = $1700
+    - but could be free after e-mailing ldc@ldc.upenn.edu ?
+    - ldc = linguistic data consortium
+--> other downside of using Mikolov's simplified PTB is that he has already preprocessed the corpus to < 10,000 words
+    - the language model emits too many <unk> tokens
+    - Bowman's, by comparison, emits almost none
+--> we could ignore PTB altogether and switch over to Wikitext2, which appears to be becoming common in LM tasks in academia

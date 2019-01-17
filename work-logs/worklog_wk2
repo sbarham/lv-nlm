@@ -1,0 +1,44 @@
+- Need to enable switching between multiple corpora with ease
+--> o should be super simple interface, transparent to user
+--> o should allow easy selection of (1) max vocab, (2) max seq length
+--> o should print out stats on resulting dataset after preprocessing
+
+- Problem:
+--> x existing dataset code is poorly written, hard to understand, brittle and slow
+--> updating code is slow, because care has to be taken not to break anything already present
+
+--> o create code for loading pretrained GLOVE vectors
+--> o integrating storing GLOVE vectors with vocab creation
+--> o adding easy option for using these pretrained vectors instead of jointly training
+- Resolved (4 hours later)
+--> code refactored
+--> sentences filtered on length
+--> pretrained glove embeddings loaded on option
+
+- Problem:
+--> x root directory way overcomplicated
+--> x project doesn't use best-practice Python standards
+    - no pip requirements
+    - no license, etc.
+- Resolved:
+--> x organized code into logical packages (corpus, model, etc.)
+
+- Tested:
+--> x all functionality (integration test)
+    - mysterious cuda error (59), very hard to track down
+    - turned out to be an off-by-one error (indices in w2i ended up being shifted
+      over by one vis a vis i2w) leading to the cuda device assert error; the relevant code was:
+            special_tokens = ['<unk>', '<pad>', '<sos>', '<eos>']
+            for tok in special_tokens:
+                i2w[len(i2w)] = tok
+                w2i[tok] = len(i2w)
+      where the final `len(i2w)` should be `len(w2i)`; and again here:
+            if count >= self.min_occ and tok not in special_tokens:
+                    i2w[len(i2w)] = tok
+                    w2i[tok] = len(w2i)
+      with the equivalent correction
+
+--> o model trains and samples as before (but took 3 hours to track down all the relevant errors)
+
+- Problem:
+--> need to enable other corpora to be substituted with ease
