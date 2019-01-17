@@ -4,7 +4,6 @@ import torch.nn.utils.rnn as rnn_utils
 from utils import to_var
 
 class SentenceVAE(nn.Module):
-
     def __init__(self, vocab_size, embedding_size, rnn_type, hidden_size, word_dropout, embedding_dropout, latent_size,
                 sos_idx, eos_idx, pad_idx, unk_idx, max_sequence_length, num_layers=1, bidirectional=False):
 
@@ -38,7 +37,7 @@ class SentenceVAE(nn.Module):
             raise ValueError()
 
         self.encoder_rnn = rnn(embedding_size, hidden_size, num_layers=num_layers, bidirectional=self.bidirectional, batch_first=True)
-        self.decoder_rnn = rnn(embedding_size, hidden_size, num_layers=num_layers, bidirectional=self.bidirectional, batch_first=True)
+        self.decoder_rnn = rnn(embedding_size, hidden_size, num_layers=num_layers, bidirectional=False, batch_first=True)
 
         self.hidden_factor = (2 if bidirectional else 1) * num_layers
 
