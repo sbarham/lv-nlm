@@ -40,5 +40,19 @@
 
 --> o model trains and samples as before (but took 3 hours to track down all the relevant errors)
 
+- Problem
+--> x need Github repo for all future LV-NLM projects (latent-variable neural language model projects)
+--> o created such, including license and README.md
+
 - Problem:
---> need to enable other corpora to be substituted with ease
+--> x need to enable other corpora to be substituted with ease
+--> o created class hierarchy with corpus.base.Corpus as base class for all corpora; this allowed
+      much code to be factored out of the other Corpus classes
+--> o created subclasses PTB (for Mikolov Penn Treebank), Brown (for NLTK Brown), Gutenberg (for NLTK Gutenberg),
+      Bible (from NLTK Gutenberg) Wikitext2 (for Wikitext2) and Wikitext103 (for the larger Wikitext corpus)
+      - the NLTK corpora have no train/test/val split built in, so a system had to be engineered to simulate this
+        in a repeatable way
+      - used random.seed() with a project-wide seed value
+      - Corpus object automatically creates train/test/val split and pickles the indices for future use
+--> o uploaded datasets to Floydhub using command line tool (floyd-cli) to ensure separation of datasets from
+      model code (and enable quicker workspace loading)

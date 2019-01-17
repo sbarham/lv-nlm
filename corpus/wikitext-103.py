@@ -26,16 +26,15 @@ import corpus.base.Corpus as Corpus
 import corpus.util.load_embeddings as load_embeddings
 import corpus.util.num_lines as num_lines        
     
-class PTB(Corpus):
+class Wikitext103(Corpus):
     def __init__(self, split, create_data, name='ptb', embeddings=False, **kwargs):
         super().__init__(split, create_data, embeddings, **kwargs)
         
-        self.ptb_dir = util.PTB_DIR
         self.name = name
-        self.raw_data_path = os.path.join(self.data_dir, self.ptb_dir, split + '.txt')
+        self.raw_data_path = os.path.join(self.data_dir, util.WIKITEXT103_DIR, split + '.txt')
         self.vocab_file = name + '.vocab.pickle'
         
-        print("Preprocessing Penn Treebank *{}* data:".format(self.split))
+        print("Preprocessing Wikitext-103 *{}* data:".format(self.split))
         print("------------------------------------------")
         self._create_data()
 

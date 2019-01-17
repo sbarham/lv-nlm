@@ -15,7 +15,7 @@ import torchtext.vocab
 import numpy as np
 
 # nltk
-from nltk.corpus import brown as brown
+from nltk.corpus import gutenberg as gutenberg
 
 # tqdm
 from tqdm import tqdm_notebook as tqdm
@@ -56,7 +56,7 @@ def generate_split(random_seed, train_split, val_split, test_split):
         pickle.dump(test_indices, train_path)
         
 
-class Brown(Corpus):
+class Gutenberg(Corpus):
     def __init__(self, split, create_data, name='brown', embeddings=False, train_split=0.8,
                  val_split=0.1, test_split=0.1, random_seed=1111, **kwargs):
         super().__init__(split, create_data, embeddings, **kwargs)
@@ -65,10 +65,10 @@ class Brown(Corpus):
         random.seed(random_seed)
         
         # this takes a while; do it now
-        self.num_sents = len(brown.sents())
+        self.num_sents = len(gutenberg.sents())
         
         # compute the directory/path where this split's indices are stored
-        self.data_indices_dir = os.path.join(util.DATA_DIR, util.BROWN_DIR)
+        self.data_indices_dir = os.path.join(util.DATA_DIR, util.GUTENBERG_DIR)
         self.data_indices_path = os.path.join(self.data_indices_dir, split + '.indices')
         
         # if this is the TRAIN split, generate the split indices
@@ -85,7 +85,7 @@ class Brown(Corpus):
         self.vocab_file = name + '.vocab.pickle'
         
         # preprocess the data
-        print("Preprocessing Brown Corpus *{}* data:".format(self.split))
+        print("Preprocessing Gutenberg *{}* data:".format(self.split))
         print("------------------------------------------")
         self._create_data()
 
@@ -100,7 +100,7 @@ class Brown(Corpus):
 
         print("Creating dataset ...")
         data = dict()
-        for i, words in tqdm(enumerate(brown.sents())):
+        for i, words in tqdm(enumerate(gutenberg.sents())):
             # filter out sequences longer than self.max_sequence_length
             if len(words) >= self.max_sequence_length:
                 continue
@@ -144,7 +144,7 @@ class Brown(Corpus):
             w2i[tok] = len(w2i)
 
         print("\t[Getting word counts]")
-        for words in tqdm(brown.sents()):
+        for words in tqdm(gutenberg.sents()):
             w2c.update(words)
 
         print("\t[Creating dictionaries]")
