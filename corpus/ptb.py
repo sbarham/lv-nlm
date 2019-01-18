@@ -22,9 +22,8 @@ from tqdm import tqdm_notebook as tqdm
 # our code
 import util
 from util.utils import OrderedCounter
-import corpus.base.Corpus as Corpus
-import corpus.util.load_embeddings as load_embeddings
-import corpus.util.num_lines as num_lines        
+from corpus.base import Corpus
+from corpus.util import load_embeddings, get_num_lines        
     
 class PTB(Corpus):
     def __init__(self, split, create_data, name='ptb', embeddings=False, **kwargs):
@@ -58,7 +57,7 @@ class PTB(Corpus):
                 if len(words) >= self.max_sequence_length:
                     continue
 
-                input, target, length = process_sent(words)
+                input, target, length = self.process_sent(words)
 
                 # add the datum to the dataset
                 idx = len(data)

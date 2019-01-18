@@ -24,18 +24,6 @@ from tqdm import tqdm_notebook as tqdm
 import util
 from util.utils import OrderedCounter
 
-def get_num_lines(file_path):
-    fp = open(file_path, "r+")
-    buf = mmap.mmap(fp.fileno(), 0)
-    lines = 0
-    while buf.readline():
-        lines += 1
-    return lines
-
-def load_embeddings():
-    glove = torchtext.vocab.GloVe(name='6B', dim=300)
-    print('Loaded {} words'.format(len(glove.itos)))
-
 class Corpus(Dataset):
     def __init__(self, split, create_data, embeddings=False, **kwargs):
         super().__init__()

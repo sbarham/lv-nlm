@@ -56,3 +56,30 @@
       - Corpus object automatically creates train/test/val split and pickles the indices for future use
 --> o uploaded datasets to Floydhub using command line tool (floyd-cli) to ensure separation of datasets from
       model code (and enable quicker workspace loading)
+      
+- Problem:
+--> o migrated to Pytorch 1.0 ... you'd think that'd be a good thing? but
+--> x as a side-effect of the variable/tensor merge (and how old and bad the code base was),
+      there are numerous
+          "invalid index of a 0-dim tensor"
+      warnings-turned-errors, and the code breaks on FloydHub
+--> o the solution amounted essentially to hunting down every occurrence of `.data[0]`
+      and converting it to `.item()`
+      - no doubt there are still other outdated Torch idioms/usages scattered throughout the code,
+        but I haven't the time to hunt them down at the moment
+        
+- Problem:
+--> x mysterious error upon log_softmax() in bowman.SentenceVAE#forward() function
+      - I'd give more info, but Python claims precise stacktrace lost "due to multithreading" (yikes)
+--> o this was fixed eventually by walking back to PyTorch 0.4
+
+- Problem
+--> x upon testing other datasets (in particular the NLTK ones), discovered a number of errors
+--> o took a few hours to track them all down
+      - caveat: uncertain whether wikitext-103 works or not; the dataset consists of > 100 million
+                word tokens, and after waiting 15 minutes just to process the corpus' vocabulary,
+                I gave up, to work on more pressing issues
+
+- Problem (TODO)
+--> x 'bidirectional' setting does not work (hidden dimension mismatch)
+       - not yet resolved

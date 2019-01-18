@@ -57,7 +57,7 @@ class Wikitext103(Corpus):
                 if len(words) >= self.max_sequence_length:
                     continue
 
-                input, target, length = process_sent(words)
+                input, target, length = self.process_sent(words)
 
                 # add the datum to the dataset
                 idx = len(data)
