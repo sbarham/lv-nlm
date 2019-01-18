@@ -22,11 +22,10 @@ from tqdm import tqdm_notebook as tqdm
 # our code
 import util
 from util.utils import OrderedCounter
-import corpus.base.Corpus as Corpus
-import corpus.util.load_embeddings as load_embeddings
-import corpus.util.num_lines as num_lines        
+from corpus.base import Corpus
+from corpus.util import load_embeddings, get_num_lines      
     
-class Wikitext103(Corpus):
+class Wikitext2(Corpus):
     def __init__(self, split, create_data, name='ptb', embeddings=False, **kwargs):
         super().__init__(split, create_data, embeddings, **kwargs)
         
@@ -57,7 +56,7 @@ class Wikitext103(Corpus):
                 if len(words) >= self.max_sequence_length:
                     continue
 
-                input, target, length = process_sent(words)
+                input, target, length = self.process_sent(words)
 
                 # add the datum to the dataset
                 idx = len(data)
@@ -119,7 +118,7 @@ class Wikitext103(Corpus):
         print("Vocabulary created (%i word types)!" %len(w2i))
         
         # save the vocab object
-        with open(os.path.join(self.data_dir, self.vocab_file), 'wb') as vocab_file:
+        with open(self.vocab_file, 'wb') as vocab_file:
             pickle.dump(vocab, vocab_file)
 
         self._load_vocab()
