@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import Dataset
 
 # torchtext
+import torchtext
 import torchtext.vocab
 
 # numpy
@@ -25,7 +26,8 @@ from tqdm import tqdm_notebook as tqdm
 import util
 from util.utils import OrderedCounter
 from corpus.base import Corpus
-from corpus.util import load_embeddings, get_num_lines      
+import corpus.utils
+from corpus.tmp import load_embeddings, get_num_lines  
 
 class Brown(Corpus):
     def __init__(self, split, create_data, name='brown', embeddings=False, train_split=0.8,

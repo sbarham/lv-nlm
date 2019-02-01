@@ -17,7 +17,7 @@ def to_var(x, volatile=False):
         x = x.cuda()
     return Variable(x, volatile=volatile)
 
-def expierment_name(args, ts):
+def experiment_name(args, ts):
     exp_name = str()
     exp_name += "BS=%i_"%args.batch_size
     exp_name += "LR={}_".format(args.learning_rate)
@@ -32,5 +32,13 @@ def expierment_name(args, ts):
     exp_name += "K={}_".format(args.k)
     exp_name += "X0=%i_"%args.x0
     exp_name += "TS=%s"%ts
+    
+    model_name = ':'.join([
+        str(args.hidden_size),
+        args.corpus,
+        str(args.max_sequence_length),
+        str(args.latent_size),
+        'bi' if args.bidirectional else 'uni'
+    ])
 
-    return exp_name
+    return model_name

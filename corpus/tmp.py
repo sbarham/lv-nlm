@@ -7,6 +7,10 @@ import torchtext
 # ours
 import util
 
+def load_embeddings():
+    glove = torchtext.vocab.GloVe(name='6B', dim=300)
+    print('Loaded {} words'.format(len(glove.itos)))
+
 def get_num_lines(file_path):
     if util.FLOYD:
         return 0
@@ -17,7 +21,3 @@ def get_num_lines(file_path):
     while buf.readline():
         lines += 1
     return lines
-
-def load_embeddings():
-    glove = torchtext.vocab.GloVe(name='6B', dim=300)
-    print('Loaded {} words'.format(len(glove.itos)))

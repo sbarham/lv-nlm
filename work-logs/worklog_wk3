@@ -1,0 +1,228 @@
+Hi Soheil!
+
+In advance of tomorrow's meeting, I wanted to provide you with another note on what I've been working on.
+
+Again, as we mentioned, I've been focusing on having the code all tidied up and fitted with features that we do (/will) need when we begin to explore more sophisticated/novel models. This has been an investment of many (~30 - 40) hours.
+
+Tomorrow will probably mainly consist of my showing you the results of experiments with various models and datasets, including the long/short sentence reconstructions test that we mentioned last week.
+
+I haven't had the time this week to focus on the He et al. paper, although I'd very much like to plunge into it together soon -- perhaps next week?
+
+Kind regards,
+Sam.
+
+PS:
+A partial worklog follows (x's typically represent a problem encountered; o the solution applied)
+
+---------------------------------------------------------------------------------------------------
+
+- Problem:
+-- o loading saved models was erroring out
+-- o tracked down the error to the way in which the arguments (hyperparameters) list
+     was being read in improperly; bool True was being read in as str 'True', and similarly
+     for False; this was causing dimensions to mismatch, and RNN-based components to be
+     made bidirectional when the saved parameters were for unidirectional networks
+
+-- o when sampling, occasional error because 'too many indices for 0-dimensional tensor'
+     * the error happened inconsistently, so I had let it slide for a while
+     * eventually it become annoying, and it certainly made it impossible to
+       include automatic sample generation as a part of the run_experiment() function --
+       if it errored out during a grid_search(), and I wasn't paying attention, GPU
+       time could be wasted
+-- o tracked down the problem to one of the functions called in SentenceVAE#inference() returning
+     a 0-dimensional tensor (a number, in other words) rather than a 1-dimensional tensor
+     with a single element
+     
+-- o reintegrated sampling/inference code into run_experiment(), now that that functionality
+     worked reliably
+     
+Tasks completed:
+----------------
+-- o refactor code in testbed, placing functions in appropriate directories/modules and
+     refactoring everything so that local directories/modules don't error out during use
+     -- done; this took a while
+-- o refactor code in test()/test_cold() to be more modular
+-- o write reconstruction test code (as in last page of Bowman)
+-- o save file with ELBO/KLD/NLL after each epoch for each split, highlighting the
+     best
+     * this took several hours, for many reasons;
+     * the final result is extremely luminating, however
+     
+     
+Problems encountered:
+----------------------
+-- o metric-pretty-print is working correctly -- except that the metric values
+     themselves are printed to extraneous decimal places; need to fix this
+-- o metric-pretty-print is working correctly -- except that it prints metrics
+     batch-by-batch, but highlights the ith metric, where i is the best *epoch* --
+     - we either need to record epoch-averages, as well as batch-by-batch averages
+     - or we need to record best batch statistics as well
+     - I vote for the former
+-- o both issues resolved; the metric pretty print looks respectable -- and very
+     readable -- now
+    
+-- o moved all printing/(metric/args)-saving functions to experiment.utils and reran
+     integration testing
+     - function found missing by interpreter; moved into correct file
+     - integration testing now passing
+     
+-- o in function `cold_interpolation`, error: "'numpy.ndarray' object has no attribute 'float'"
+-- o to_var(interpolation(...)).float() had suffered transposition of .float():
+     - it had been moved inside the parens, and was being called on a numpy ndarray, which
+       has no such method
+     - removed .float(), unsure of function; immediately model.inference() failed in forward
+       pass; apparently, interpolation() yields a DoubleTensor, while the model wants a
+       FloatTensor
+     - moved .float() back to the outside, producing a 32-bit precision tensor
+     - fixed!
+     
+-- o in function `warm_interpolation`, local variable `device` undefined
+     - this is a result of factoring code out of `test` into individual helpers
+     - defined global variable in util.__init__.py, accessible as util.DEVICE, which
+       is automatically initialized to 'cuda' or 'cpu' based on availability
+-- o replaced `device` in refactored helpers with `util.DEVICE` everywhere the former appears
+
+-- o in `reconstruction`, when invoking model.inference(z=mean) with the mean z-value for a given
+     corpus sentence, encountered following error:
+     -- "Expected hidden size (1, 20, 256), got (1, 256)"
+-- o mean z-value being passed needed to be unsequeezed in first dimension to include
+     what BowmanVAE#inference() interprets as batch_size
+     
+-- o in `reconstruction`, code copied from BowmanVAE#inference() had, in loop for printing
+     out sentences from z-value sampled stochastically according to mean/logvar:
+     -- x reference to self.latent_size
+     (-- o replaced this with reference to args.latent_size)
+     -- x reference to batch_size (which BowmanVAE#inference() takes as number of sentences
+          to decode)
+     (-- o replaced this with 3, as Bowman's paper samples three sentences randomly during
+           reconstruction test)
+           
+-- o a litany of smaller bugs in the factored-out *_interpolation and reconstruction methods
+-- o fixed all of them
+
+
+******************************************
+All code now works. (9:53PM, 1/29/2019)  *
+******************************************
+
+
+Next ToDo (1/28/2019 - 1/29/2019):
+----------------------------------
+-- o increase number of times sampling code is run, perhaps via a flag/argument, and rely on
+     new, refactored code
+     -- o done! (1/30/2019)
+-- o compute and distance between z-values, print with samples for reference
+     -- o done (for reconstruction, which is the only method it makes sense for)
+-- o come up with a final set of parameters to use in running the experiment suite
+     on the
+     
+     
+Final push! (1/30-31/2019):
+---------------------------
+-- o write code to randomly pick very long sentences from the corpus
+-- o write code to randomly pick very short sentences from the corpus
+     -- accomplished both of these using a fast random/iterative method; rather than
+        obtaining the true average length of all the sentences, and the true maximum length,
+        I sample some number of sentences from the corpus (args.sample_warmup_period) and
+        compute a stochastic average and stochastic (approximate) max/min
+     -- then, for long sentences, search randomly until you find one  > (avg + max) / 2
+     -- similarly, for short ones, search randomly until you find one < (args + min) / 2
+
+-- o adjusted reconstruction again:
+   -- factored out corpus sentence selection code into three helpers:
+      `get_random`
+      `get_random_short`
+      `get_random_long`
+-- o refactored `reconstruction` so that several short and several long sentences
+     are selected, rather than one each; used `args.num_reconstructions` for this, so
+     now there `args.num_reconstructions` sentences selected of each variety:
+        long/short/random
+-- o adjusted formatting to make a clear visual distinction in the samples file between
+     these three typeso of reconstructions
+      
+-- o test bidirectional encoder
+   -- confirmed bidirectional mode is broken
+   -- got error
+              'invalid argument 2: size '[2 x 64 x 256]' is invalid for input with 16384 elements'
+      in BowmanVAE at code context
+      
+              `114    if self.bidirectional or self.num_layers > 1:
+               115        # unflatten hidden state
+           --> 116        hidden = hidden.view(self.hidden_factor, batch_size, self.hidden_size)
+               117    else:
+               118        hidden = hidden.unsqueeze(0)`
+   -- The reason for the error:
+      -- As we found last semester, this BowmanVAE model takes the `bidirectional` flag to
+         indicate both a bidirectional encoder *and* decoder; of course a bidirectional
+         decoder makes no sense
+      -- I had changed the code so that `bidirectional` causes only the encoder to be made
+         bidirectional, and adjusts the dimensions of `latent2hidden` accordingly
+      -- however, I'd missed this bit of code -- the if/else is no longer necessary;
+         hidden should always be unsqueezed, from [batch_size, hidden_size] to
+         [1, batch_size, hidden_size] before being fed into the decoder
+   -- upon fixing this one, a further error arose, related to the size of the hidden
+      state in the inference function
+      -- removed similar if/else in inference
+      -- new error now; was unsqueezing the mean in reconstruction; this is no longer
+         necessary, so removed the .unsqueeze(0) call on mean/log_var in `reconstruction`
+   -- IT WORKS
+   
+-- o fixed major bug in warm_interpolation, whereby the length of the corpus sentence
+     wasn't being passed along to the model during the forward pass, but rather the tensor [1] --
+     meaning the model thought the sentence was only one symbol long; as a result, the encoding
+     (the z value) represented a sentence of length 1, and all the samples were (obediently)
+     very short, or empty (simply an <eos>)
+     -- this is in itself an interesting behavior
+     -- clearly one of the things being encoded is sentence length
+     
+-- o perform the final refactor to get all the sampling code out of the Jupyter Notebook
+     and into the modules it belongs in
+     -- moved all code to experiment.sample
+     -- resolved all missing dependencies in that module
+
+
+The work has paid off -- run the experiments! (1/31/2019 - 2/1/2019):
+---------------------------------------------------------------------
+-- x write code to clear `bin` directory of all experiments
+-- x run experiments on many datasets and sizes of model
+     
+     
+Yet to do/Extra Fun (but for later):
+------------------------------------
+-- x refactor code in run_experiment() to save and search for saved `datasets` objects, to reduce
+     run time during lengthy gird_search()'s
+
+
+Additional work (1/30/2019):
+----------------------------
+-- o function `reconstruction` significantly refactored; now formatting is much more readable
+     -- also, the distance of each random sample's latent code from the mean is printed
+        before the sample
+     -- got rid of <sos> at the start of originals; and <eos> at the end of samples
+        -- tried to do this carefully, using if startswith() and if endswith(), in case
+           either (a) the corpus format changes in the future to not use <sos> or
+           (b) the sample is terminated by hitting max length instead of encountering
+           an <eos>, meaning the sample string doesn't end in <eos>
+     -- wrote function to clean each sample, integrating functionality from just above
+        (stripping <eos> and <sos>) with:
+        -- stripping extraneous whitespace
+        -- fixing punctuation:
+           -- getting rid of white space around colons between numbers (as in chapter:verse)
+           -- getting rid of white space around apostrophes
+           -- getting rid of white space before final periods
+           -- getting rid of white space before commas, colons, and periods
+
+
+Talking points:
+---------------
+-- * in my paper last semester, noted that better train perf. is more important
+     than better test perf. for getting good generative models -- has anyone else
+     noticed this?
+-- * we need to decrease NLL and somewhat increase KL, this is the intuition from
+     Bowman
+     * but really, what is the ideal KL? Obviously a huge KL means sampling doesn't
+       have good support everywhere in latent space
+     * but a KL of 0 means the latent code isn't being used at all
+        -- actually, what even does 0 KL from the 0-mean/1-variance gaussian mean?
+-- * passing length 1 to model results in z's that decode to short or empty sentences
+     * -- is length one of the features being encoded?

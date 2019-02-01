@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import Dataset
 
 # torchtext
+import torchtext
 import torchtext.vocab
 
 # numpy
@@ -25,7 +26,8 @@ from tqdm import tqdm_notebook as tqdm
 import util
 from util.utils import OrderedCounter
 from corpus.base import Corpus
-from corpus.util import load_embeddings, get_num_lines      
+import corpus.utils
+# from corpus.utils import load_embeddings, get_num_lines  
 
 class Brown(Corpus):
     def __init__(self, split, create_data, name='brown', embeddings=False, train_split=0.8,
@@ -159,7 +161,7 @@ class Brown(Corpus):
         # load glove embeddings, if desiresd
         if self.embeddings is not None:
             print("\t[Loading pretrained GLOVE embeddings -- this may take a while the first time]")
-            load_embeddings()
+            corpus.utils.load_embeddings()
             glove_embeddings = self._get_embeddings(i2w)
         else:
             glove_embeddings = None

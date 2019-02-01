@@ -8,9 +8,6 @@ from collections import defaultdict
 import torch
 from torch.utils.data import Dataset
 
-# torchtext
-import torchtext.vocab
-
 # numpy
 import numpy as np
 
